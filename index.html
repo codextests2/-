@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>陳楚洹專屬娃娃機</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@imgly/background-removal@1.4.3/dist/browser/bundle.umd.js"></script>
+    <style>
+        body { touch-action: manipulation; }
+        
+        .glass-glare {
+            background: linear-gradient(105deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+        }
+
+        #prong-left, #prong-right { transition: transform 0.3s ease; }
+        .claw-open #prong-left { transform: rotate(35deg); }
+        .claw-open #prong-right { transform: rotate(-35deg); }
+        .claw-closed #prong-left { transform: rotate(5deg); }
+        .claw-closed #prong-right { transform: rotate(-5deg); }
+
+        .prize-item {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            user-select: none;
+            -webkit-user-drag: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(200,230,255,0.3) 50%, rgba(100,180,255,0.5) 100%);
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.15), 3px 5px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+        
+        .prize-item img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
+        }
+
+        .arcade-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 0 #b91c1c; }
+        .arcade-btn { box-shadow: 0 4px 0 0 #b91c1c; transition: all 0.1s; }
+        .arcade-btn-blue:active { transform: translateY(4px); box-shadow: 0 0px 0 0 #1d4ed8; }
+        .arcade-btn-blue { box-shadow: 0 4px 0 0 #1d4ed8; transition: all 0.1s; }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ec4899;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-2 font-sans text-white">
+
+    <div class="w-full max-w-md mb-4 flex justify-between items-center bg-gray-800 p-4 rounded-xl border-2 border-gray-700">
+        <h1 class="text-xl font-bold text-pink-400">✨ 陳楚洹專屬娃娃機</h1>
+        <label class="cursor-pointer bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-colors relative">
+            ➕ 上傳並去背
+            <input type="file" id="image-upload" accept="image/*" multiple class="hidden">
+        </label>
+    </div>
+
+    <div id="loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex flex-col items-center justify-center text-white">
+        <div class="loader mb-4"></div>
+        <p class="font-bold text-lg">AI 正在為圖片去背...</p>
+        <p class="text-sm text-gray-300 mt-2">首次執行會下載 AI 模型，請稍候幾秒鐘</p>
+    </div>
+
+    <div class="relative w-full max-w-md aspect-[3/4] bg-cyan-100 rounded-t-3xl border-8 border-pink-500 overflow-hidden shadow-[0_0_20px_rgba(236,72,153,0.5)] flex flex-col">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTAgMGgyMHYyMEgwem0xMCAxMGgxMHYxMEgxMHoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIvPjwvc3ZnPg==')] opacity-50"></div>
+        <div class="absolute top-0 w-full h-10 bg-pink-600 shadow-lg z-20 flex justify-center items-center">
+            <div class="flex space-x-4">
+                <div class="w-3 h-3 bg-yellow-300 rounded-full animate-pulse"></div>
+                <div class="w-3 h-3 bg-yellow-300 rounded-full animate-pulse delay-75"></div>
+                <div class="w-3 h-3 bg-yellow-300 rounded-full animate-pulse delay-150"></div>
+            </div>
+        </div>
+
+        <div id="game-area" class="relative flex-1 w-full h-full">
+            <div class="absolute bottom-0 left-0 w-[25%] h-[20%] bg-gray-800 border-r-4 border-t-4 border-gray-600 rounded-tr-xl flex items-center justify-center z-10">
+                <div class="w-3/4 h-3/4 bg-black rounded-lg shadow-inner"></div>
+            </div>
+            
+            <div id="prizes-container" class="absolute inset-0 z-10"></div>
+
+            <div id="claw-assembly" class="absolute top-0 z-30" style="left: 60%; transform: translateX(-50%);">
+                <div id="rope" class="w-1.5 bg-gray-400 mx-auto border-l border-gray-300" style="height: 50px;"></div>
+                <div id="claw-head" class="relative claw-open w-16 h-12 flex flex-col items-center -mt-1">
+                    <div class="w-8 h-5 bg-yellow-400 rounded-t-lg border-2 border-yellow-600 z-10"></div>
+                    <div class="absolute top-4 left-1 w-2 h-10 bg-gray-400 origin-top border border-gray-500 rounded-full" id="prong-left"></div>
+                    <div class="absolute top-4 right-1 w-2 h-10 bg-gray-400 origin-top border border-gray-500 rounded-full" id="prong-right"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-glare absolute inset-0 z-40 rounded-t-2xl"></div>
+    </div>
+
+    <div class="w-full max-w-md bg-pink-500 p-6 rounded-b-3xl border-x-8 border-b-8 border-pink-600 shadow-2xl flex justify-between items-center z-50">
+        <div class="flex space-x-2">
+            <button id="btn-left" aria-label="向左移動" class="arcade-btn-blue w-16 h-16 bg-blue-500 hover:bg-blue-400 rounded-full text-3xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">◀</button>
+            <button id="btn-right" aria-label="向右移動" class="arcade-btn-blue w-16 h-16 bg-blue-500 hover:bg-blue-400 rounded-full text-3xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">▶</button>
+        </div>
+        <button id="btn-drop" class="arcade-btn w-20 h-20 bg-red-500 hover:bg-red-400 rounded-full text-2xl font-bold flex justify-center items-center select-none active:bg-red-600 text-white uppercase tracking-wider">GO!</button>
+    </div>
+
+    <div class="w-full max-w-md mt-6 bg-gray-800 p-4 rounded-xl border border-gray-700">
+        <h2 class="text-sm text-gray-400 font-bold mb-2">戰利品（My Collection）</h2>
+        <div id="collection-bin" class="flex flex-wrap gap-2 min-h-[60px]"></div>
+    </div>
+
+    <script>
+        const GAME_W = 1000;
+        const GAME_H = 1000;
+        const CHUTE_W = 250; 
+        const CHUTE_X = 125; 
+        
+        let claw = {
+            x: 600, y: 100, 
+            state: 'IDLE', 
+            speedX: 8, speedY: 12
+        };
+
+        let prizes = [];
+        let grabbedPrize = null;
+        let isMovingLeft = false;
+        let isMovingRight = false;
+        const objectUrls = new Set();
+        
+        const clawAssembly = document.getElementById('claw-assembly');
+        const rope = document.getElementById('rope');
+        const clawHead = document.getElementById('claw-head');
+        const prizesContainer = document.getElementById('prizes-container');
+        const collectionBin = document.getElementById('collection-bin');
+        const gameArea = document.getElementById('game-area');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        function addPrize(imgSrc) {
+            const id = 'prize_' + Math.random().toString(36).substring(2, 9);
+            const size = 120;
+            
+            const minX = CHUTE_W + size;
+            const maxX = GAME_W - size;
+            const x = minX + Math.random() * (maxX - minX);
+            const y = -size;
+            
+            const el = document.createElement('div');
+            el.className = 'prize-item'; 
+            el.style.width = '12%'; 
+            el.style.aspectRatio = '1 / 1';
+            el.id = id;
+            el.innerHTML = `<img src="${imgSrc}" alt="prize">`;
+            
+            prizesContainer.appendChild(el);
+            
+            prizes.push({
+                id, el, x, y, size,
+                content: imgSrc,
+                isGrabbed: false,
+                isCollected: false,
+                rotation: Math.random() * 360,
+                vx: (Math.random() - 0.5) * 5, 
+                vy: 0,
+                mass: 1
+            });
+            
+            updatePrizeDOM();
+        }
+
+        document.getElementById('image-upload').addEventListener('change', async function(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            
+            loadingOverlay.classList.remove('hidden');
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                try {
+                    if (typeof window.imglyRemoveBackground !== 'function') {
+                        throw new Error('去背元件載入失敗');
+                    }
+                    const blob = await window.imglyRemoveBackground(file);
+                    const url = URL.createObjectURL(blob);
+                    objectUrls.add(url);
+                    addPrize(url);
+                } catch (error) {
+                    console.error('去背失敗，改用原圖：', error);
+                    const reader = new FileReader();
+                    reader.onload = (event) => addPrize(event.target.result);
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            loadingOverlay.classList.add('hidden');
+            this.value = ''; 
+        });
+
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const btnDrop = document.getElementById('btn-drop');
+
+        window.addEventListener('beforeunload', () => {
+            objectUrls.forEach(url => URL.revokeObjectURL(url));
+        });
+
+        // 長按按鈕，統一使用 Pointer Events 支援滑鼠與觸控
+        const bindHoldEvent = (btn, dir) => {
+            const start = (e) => { e.preventDefault(); if(claw.state === 'IDLE') dir === 'left' ? isMovingLeft = true : isMovingRight = true; };
+            const stop = (e) => { e.preventDefault(); isMovingLeft = false; isMovingRight = false; };
+            btn.addEventListener('pointerdown', start);
+            btn.addEventListener('pointerup', stop);
+            btn.addEventListener('pointercancel', stop);
+            btn.addEventListener('pointerleave', stop);
+        };
+
+        bindHoldEvent(btnLeft, 'left');
+        bindHoldEvent(btnRight, 'right');
+
+        btnDrop.addEventListener('click', () => {
+            if (claw.state === 'IDLE') {
+                claw.state = 'DROPPING';
+                isMovingLeft = false;
+                isMovingRight = false;
+            }
+        });
+
+        function updateDOM() {
+            clawAssembly.style.left = `${(claw.x / GAME_W) * 100}%`;
+            rope.style.height = `${(claw.y / GAME_H) * gameArea.clientHeight}px`;
+
+            if (['IDLE', 'DROPPING', 'RELEASING', 'RETURNING'].includes(claw.state)) {
+                clawHead.classList.add('claw-open');
+                clawHead.classList.remove('claw-closed');
+            } else {
+                clawHead.classList.remove('claw-open');
+                clawHead.classList.add('claw-closed');
+            }
+        }
+
+        function updatePrizeDOM() {
+            prizes.forEach(p => {
+                if (p.isCollected) return; 
+                p.el.style.left = `${(p.x / GAME_W) * 100}%`;
+                p.el.style.top = `${(p.y / GAME_H) * 100}%`;
+                p.el.style.transform = `translate(-50%, -50%) rotate(${p.rotation}deg)`;
+            });
+        }
+
+        function updatePhysics() {
+            const gravity = 0.8;
+            const friction = 0.9;
+            const restitution = 0.4;
+
+            prizes.forEach((p, pIndex) => {
+                if (p.isCollected || p.isGrabbed) return;
+
+                p.vy += gravity;
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.y > GAME_H - p.size / 2) {
+                    p.y = GAME_H - p.size / 2;
+                    p.vy *= -restitution;
+                    p.vx *= friction;
+                }
+                
+                if (p.x > GAME_W - p.size / 2) {
+                    p.x = GAME_W - p.size / 2;
+                    p.vx *= -restitution;
+                } else if (p.x < CHUTE_W + p.size / 2) {
+                    if(p.y > GAME_H * 0.8) {
+                        p.x = CHUTE_W + p.size / 2;
+                        p.vx *= -restitution;
+                    } else if (p.x < p.size/2) {
+                         p.x = p.size/2;
+                         p.vx *= -restitution;
+                    }
+                }
+
+                prizes.forEach((other, otherIndex) => {
+                    if (otherIndex <= pIndex || other.isCollected || other.isGrabbed) return;
+
+                    const dx = other.x - p.x;
+                    const dy = other.y - p.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const minDistance = (p.size + other.size) / 2;
+
+                    if (distance < minDistance) {
+                        const overlap = minDistance - distance;
+                        const angle = distance === 0
+                            ? Math.random() * Math.PI * 2
+                            : Math.atan2(dy, dx);
+                        
+                        const moveX = Math.cos(angle) * overlap / 2;
+                        const moveY = Math.sin(angle) * overlap / 2;
+                        
+                        p.x -= moveX;
+                        p.y -= moveY;
+                        other.x += moveX;
+                        other.y += moveY;
+
+                        const tempVx = p.vx;
+                        const tempVy = p.vy;
+                        p.vx = other.vx * restitution;
+                        p.vy = other.vy * restitution;
+                        other.vx = tempVx * restitution;
+                        other.vy = tempVy * restitution;
+                    }
+                });
+            });
+        }
+
+        function checkClawCollision() {
+            let closest = null;
+            let minDist = Infinity;
+            
+            prizes.forEach(p => {
+                if (p.isCollected || p.isGrabbed) return;
+                
+                const dx = Math.abs(p.x - claw.x);
+                const dy = p.y - claw.y; 
+
+                if (dx < p.size * 0.7 && dy > 0 && dy < p.size * 0.8) {
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closest = p;
+                    }
+                }
+            });
+            return closest;
+        }
+
+        function gameLoop() {
+            updatePhysics();
+
+            if (claw.state === 'IDLE') {
+                if (isMovingLeft) claw.x -= claw.speedX;
+                if (isMovingRight) claw.x += claw.speedX;
+                if (claw.x < CHUTE_W + 50) claw.x = CHUTE_W + 50;
+                if (claw.x > GAME_W - 50) claw.x = GAME_W - 50;
+            }
+
+            switch (claw.state) {
+                case 'DROPPING':
+                    claw.y += claw.speedY;
+                    const hitPrize = checkClawCollision();
+                    if (hitPrize || claw.y >= GAME_H - 100) {
+                        claw.state = 'GRABBING';
+                        if (hitPrize) {
+                            grabbedPrize = hitPrize;
+                            grabbedPrize.isGrabbed = true;
+                            grabbedPrize.vx = 0;
+                            grabbedPrize.vy = 0;
+                        }
+                        setTimeout(() => {
+                            if(claw.state === 'GRABBING') claw.state = 'RISING';
+                        }, 400);
+                    }
+                    break;
+                    
+                case 'RISING':
+                    claw.y -= claw.speedY;
+                    if (claw.y <= 100) {
+                        claw.y = 100;
+                        claw.state = 'MOVING_CHUTE';
+                    }
+                    break;
+
+                case 'MOVING_CHUTE':
+                    claw.x -= claw.speedX;
+                    if (claw.x <= CHUTE_X) {
+                        claw.x = CHUTE_X;
+                        claw.state = 'RELEASING';
+                        setTimeout(() => {
+                            if(claw.state === 'RELEASING') {
+                                if (grabbedPrize) {
+                                    grabbedPrize.isGrabbed = false;
+                                    grabbedPrize.isCollected = true;
+                                    grabbedPrize.el.style.display = 'none'; 
+                                    
+                                    const colItem = document.createElement('div');
+                                    colItem.className = 'w-12 h-12 rounded-full flex items-center justify-center border border-gray-400 relative overflow-hidden';
+                                    colItem.style.background = 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(200,230,255,0.8) 50%, rgba(100,180,255,0.9) 100%)';
+                                    colItem.innerHTML = `<img src="${grabbedPrize.content}" class="w-4/5 h-4/5 object-contain">`;
+                                    collectionBin.appendChild(colItem);
+                                    
+                                    grabbedPrize = null;
+                                }
+                                setTimeout(() => { claw.state = 'RETURNING'; }, 500);
+                            }
+                        }, 400);
+                    }
+                    break;
+
+                case 'RETURNING':
+                    claw.x += claw.speedX;
+                    if (claw.x >= 600) { 
+                        claw.x = 600;
+                        claw.state = 'IDLE';
+                    }
+                    break;
+            }
+
+            if (grabbedPrize && grabbedPrize.isGrabbed) {
+                grabbedPrize.x = claw.x;
+                grabbedPrize.y = claw.y + 50; 
+            }
+
+            updateDOM();
+            updatePrizeDOM();
+            requestAnimationFrame(gameLoop);
+        }
+
+        requestAnimationFrame(gameLoop);
+
+    </script>
+</body>
+</html>
