@@ -74,10 +74,10 @@
         }
         
         .prize-item img {
-            width: 82%;
-            height: 82%;
-            object-fit: contain;
-            transform: none;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.08);
             filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25));
         }
 
@@ -184,7 +184,7 @@
 
         function addPrize(imgSrc) {
             const id = 'prize_' + Math.random().toString(36).substring(2, 9);
-            const size = 200;
+            const size = 100;
             
             const minX = CHUTE_W + size;
             const maxX = GAME_W - size;
@@ -193,7 +193,7 @@
             
             const el = document.createElement('div');
             el.className = 'prize-item'; 
-            el.style.width = '20%';
+            el.style.width = '10%';
             el.style.aspectRatio = '1 / 1';
             el.id = id;
             el.innerHTML = `<img src="${imgSrc}" alt="prize">`;
