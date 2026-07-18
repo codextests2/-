@@ -7,7 +7,45 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@imgly/background-removal@1.4.3/dist/browser/bundle.umd.js"></script>
     <style>
-        body { touch-action: manipulation; }
+        body {
+            touch-action: manipulation;
+            background:
+                radial-gradient(circle at 20% 10%, rgba(34, 211, 238, 0.22), transparent 34%),
+                radial-gradient(circle at 85% 20%, rgba(244, 114, 182, 0.25), transparent 38%),
+                linear-gradient(145deg, #090b1a 0%, #17112f 48%, #090b1a 100%);
+        }
+
+        .top-card, .collection-card {
+            background: rgba(17, 24, 39, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+            backdrop-filter: blur(18px);
+        }
+
+        .upload-chip {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
+        }
+
+        .machine-shell {
+            border-color: rgba(244, 114, 182, 0.92);
+            background: linear-gradient(160deg, #d9fbff 0%, #dce9ff 46%, #f5dcff 100%);
+            box-shadow:
+                0 0 0 2px rgba(255, 255, 255, 0.32),
+                0 24px 70px rgba(139, 92, 246, 0.34),
+                0 0 35px rgba(34, 211, 238, 0.24);
+        }
+
+        .machine-top {
+            background: linear-gradient(90deg, #7c3aed, #ec4899 52%, #06b6d4);
+            box-shadow: 0 8px 26px rgba(124, 58, 237, 0.38);
+        }
+
+        .control-deck {
+            background: linear-gradient(135deg, #7c3aed 0%, #db2777 52%, #0891b2 100%);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 24px 60px rgba(8, 8, 25, 0.55);
+        }
         
         .glass-glare {
             background: linear-gradient(105deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0) 50%);
@@ -29,22 +67,24 @@
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(200,230,255,0.3) 50%, rgba(100,180,255,0.5) 100%);
-            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.15), 3px 5px 8px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.4);
+            overflow: hidden;
+            background: radial-gradient(circle at 28% 22%, rgba(255,255,255,0.95), rgba(216,235,255,0.32) 45%, rgba(139,92,246,0.46) 100%);
+            box-shadow: inset -12px -14px 25px rgba(67,56,202,0.2), 0 9px 18px rgba(30,27,75,0.34);
+            border: 2px solid rgba(255,255,255,0.65);
         }
         
         .prize-item img {
-            width: 94%;
-            height: 94%;
-            object-fit: contain;
-            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.08);
+            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25));
         }
 
         .arcade-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 0 #b91c1c; }
-        .arcade-btn { box-shadow: 0 4px 0 0 #b91c1c; transition: all 0.1s; }
+        .arcade-btn { box-shadow: 0 6px 0 0 #9f1239, 0 10px 24px rgba(136,19,55,0.4); transition: all 0.1s; }
         .arcade-btn-blue:active { transform: translateY(4px); box-shadow: 0 0px 0 0 #1d4ed8; }
-        .arcade-btn-blue { box-shadow: 0 4px 0 0 #1d4ed8; transition: all 0.1s; }
+        .arcade-btn-blue { box-shadow: 0 6px 0 0 #4338ca, 0 10px 24px rgba(67,56,202,0.4); transition: all 0.1s; }
 
         .loader {
             border: 4px solid #f3f3f3;
@@ -59,9 +99,9 @@
 </head>
 <body class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-2 font-sans text-white">
 
-    <div class="w-full max-w-sm mb-4 flex justify-between items-center bg-gray-800 p-4 rounded-xl border-2 border-gray-700">
+    <div class="top-card w-full max-w-sm mb-4 flex justify-between items-center p-4 rounded-2xl">
         <h1 class="text-xl font-bold text-pink-400">✨ 陳楚洹專屬娃娃機</h1>
-        <label class="cursor-pointer bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-colors relative">
+        <label class="upload-chip cursor-pointer hover:brightness-110 text-white px-4 py-2 rounded-xl text-sm font-bold transition relative">
             ➕ 上傳並去背
             <input type="file" id="image-upload" accept="image/*" multiple class="hidden">
         </label>
@@ -73,9 +113,9 @@
         <p class="text-sm text-gray-300 mt-2">首次執行會下載 AI 模型，請稍候幾秒鐘</p>
     </div>
 
-    <div class="relative w-full max-w-sm aspect-[3/4] bg-cyan-100 rounded-t-3xl border-8 border-pink-500 overflow-hidden shadow-[0_0_20px_rgba(236,72,153,0.5)] flex flex-col">
+    <div class="machine-shell relative w-full max-w-sm aspect-[3/4] rounded-t-[2rem] border-8 overflow-hidden flex flex-col">
         <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTAgMGgyMHYyMEgwem0xMCAxMGgxMHYxMEgxMHoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIvPjwvc3ZnPg==')] opacity-50"></div>
-        <div class="absolute top-0 w-full h-10 bg-pink-600 shadow-lg z-20 flex justify-center items-center">
+        <div class="machine-top absolute top-0 w-full h-10 z-20 flex justify-center items-center">
             <div class="flex space-x-4">
                 <div class="w-3 h-3 bg-yellow-300 rounded-full animate-pulse"></div>
                 <div class="w-3 h-3 bg-yellow-300 rounded-full animate-pulse delay-75"></div>
@@ -103,7 +143,7 @@
         <div class="glass-glare absolute inset-0 z-40 rounded-t-2xl"></div>
     </div>
 
-    <div class="w-full max-w-sm bg-pink-500 p-5 rounded-b-3xl border-x-8 border-b-8 border-pink-600 shadow-2xl flex justify-between items-center z-50">
+    <div class="control-deck w-full max-w-sm p-5 rounded-b-[2rem] border-x-8 border-b-8 flex justify-between items-center z-50">
         <div class="flex space-x-2">
             <button id="btn-left" aria-label="向左移動" class="arcade-btn-blue w-16 h-16 bg-blue-500 hover:bg-blue-400 rounded-full text-3xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">◀</button>
             <button id="btn-right" aria-label="向右移動" class="arcade-btn-blue w-16 h-16 bg-blue-500 hover:bg-blue-400 rounded-full text-3xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">▶</button>
@@ -111,7 +151,7 @@
         <button id="btn-drop" class="arcade-btn w-20 h-20 bg-red-500 hover:bg-red-400 rounded-full text-2xl font-bold flex justify-center items-center select-none active:bg-red-600 text-white uppercase tracking-wider">GO!</button>
     </div>
 
-    <div class="w-full max-w-sm mt-6 bg-gray-800 p-4 rounded-xl border border-gray-700">
+    <div class="collection-card w-full max-w-sm mt-6 p-4 rounded-2xl">
         <h2 class="text-sm text-gray-400 font-bold mb-2">戰利品（My Collection）</h2>
         <div id="collection-bin" class="flex flex-wrap gap-2 min-h-[60px]"></div>
     </div>
@@ -144,7 +184,7 @@
 
         function addPrize(imgSrc) {
             const id = 'prize_' + Math.random().toString(36).substring(2, 9);
-            const size = 150;
+            const size = 200;
             
             const minX = CHUTE_W + size;
             const maxX = GAME_W - size;
@@ -153,7 +193,7 @@
             
             const el = document.createElement('div');
             el.className = 'prize-item'; 
-            el.style.width = '15%';
+            el.style.width = '20%';
             el.style.aspectRatio = '1 / 1';
             el.id = id;
             el.innerHTML = `<img src="${imgSrc}" alt="prize">`;
