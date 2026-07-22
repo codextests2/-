@@ -280,6 +280,17 @@
             filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25));
         }
 
+        .prize-item.blank-ball {
+            background: radial-gradient(circle at 30% 24%, #fff 0%, #f8fafc 38%, #dce5e2 72%, #aabbb5 100%);
+            border-color: rgba(255,255,255,0.95);
+        }
+
+        .prize-item.black-ball {
+            background: radial-gradient(circle at 30% 24%, #5b6662 0%, #202724 40%, #050706 78%, #000 100%);
+            border-color: rgba(138, 161, 153, 0.7);
+            box-shadow: inset -0.7rem -0.8rem 1.4rem rgba(0,0,0,0.65), 0 0.5rem 1rem rgba(0,0,0,0.45);
+        }
+
         .arcade-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 0 #b91c1c; }
         .arcade-btn { box-shadow: 0 6px 0 0 #9f1239, 0 10px 24px rgba(136,19,55,0.4); transition: all 0.1s; }
         .arcade-btn-blue:active { transform: translateY(4px); box-shadow: 0 0px 0 0 #1d4ed8; }
@@ -303,7 +314,7 @@
         <div><span class="block text-[10px] text-gray-400">目前分數</span><strong id="score-display" class="text-lg text-pink-300">0</strong></div>
         <div><span class="block text-[10px] text-gray-400">最高分</span><strong id="best-display" class="text-lg text-yellow-300">0</strong></div>
         <button id="btn-settings" type="button" aria-label="開啟設定" class="w-8 aspect-square rounded-full bg-white/60 text-lg text-[#285c4d] hover:bg-white/90 transition">⚙</button>
-        <p class="col-span-4 text-[10px] text-gray-300">金色 50 分且較滑・其他 10 分・對準中心更容易抓到</p>
+        <p class="col-span-4 text-[10px] text-gray-300">金 50・圖案 10・白球 0・黑球 -10・對準中心更容易抓到</p>
     </div>
 
     <div id="loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[80] flex flex-col items-center justify-center text-white">
@@ -429,7 +440,7 @@
         const btnCloseSettings = document.getElementById('btn-close-settings');
         bestDisplay.textContent = bestScore;
 
-        function addPrize(imgSrc, initialPosition = null) {
+        function addPrize(imgSrc, initialPosition = null, options = {}) {
             const id = 'prize_' + Math.random().toString(36).substring(2, 9);
             const size = 100;
             
@@ -441,18 +452,22 @@
             const y = initialPosition ? initialPosition.y : -size;
             
             const el = document.createElement('div');
-            el.className = 'prize-item'; 
+            const kind = options.kind || 'image';
+            el.className = `prize-item ${kind === 'blank' ? 'blank-ball' : kind === 'penalty' ? 'black-ball' : ''}`;
             el.style.width = '10%';
             el.style.aspectRatio = '1 / 1';
             el.id = id;
-            el.innerHTML = `<img src="${imgSrc}" alt="prize">`;
+            if (imgSrc) {
+                el.innerHTML = `<img src="${imgSrc}" alt="prize">`;
+            }
             
             prizesContainer.appendChild(el);
             
             prizes.push({
                 id, el, x, y, size,
                 content: imgSrc,
-                points: imgSrc.includes('preset-18.') ? 50 : 10,
+                kind,
+                points: options.points ?? (imgSrc && imgSrc.includes('preset-18.') ? 50 : 10),
                 isGrabbed: false,
                 isCollected: false,
                 rotation: Math.random() * 360,
@@ -495,6 +510,14 @@
                 }
 
                 addPrize(src, position);
+            });
+
+            [100, 300, 500, 700, 900].forEach(x => {
+                addPrize(null, { x, y: 250 }, { kind: 'blank', points: 0 });
+            });
+
+            [200, 500, 800].forEach(x => {
+                addPrize(null, { x, y: 360 }, { kind: 'penalty', points: -10 });
             });
         }
 
@@ -790,11 +813,18 @@
                                     
                                     const colItem = document.createElement('div');
                                     colItem.className = 'w-8 h-8 shrink-0 rounded-full flex items-center justify-center border border-gray-400 relative overflow-hidden';
-                                    colItem.style.background = 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(200,230,255,0.8) 50%, rgba(100,180,255,0.9) 100%)';
-                                    colItem.innerHTML = `<img src="${grabbedPrize.content}" class="w-4/5 h-4/5 object-contain">`;
+                                    if (grabbedPrize.kind === 'blank') {
+                                        colItem.style.background = 'radial-gradient(circle at 30% 25%, #fff, #dce5e2 75%, #aabbb5)';
+                                    } else if (grabbedPrize.kind === 'penalty') {
+                                        colItem.style.background = 'radial-gradient(circle at 30% 25%, #59635f, #050706 75%, #000)';
+                                    } else {
+                                        colItem.style.background = 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(200,230,255,0.8) 50%, rgba(100,180,255,0.9) 100%)';
+                                        colItem.innerHTML = `<img src="${grabbedPrize.content}" class="w-4/5 h-4/5 object-contain">`;
+                                    }
                                     const pointsBadge = document.createElement('span');
                                     pointsBadge.className = 'absolute bottom-0 right-0 bg-black/70 text-[8px] font-bold text-yellow-300 px-1 rounded';
-                                    pointsBadge.textContent = `+${grabbedPrize.points}`;
+                                    pointsBadge.style.color = grabbedPrize.points < 0 ? '#fca5a5' : grabbedPrize.points === 0 ? '#e5e7eb' : '#fde047';
+                                    pointsBadge.textContent = grabbedPrize.points > 0 ? `+${grabbedPrize.points}` : String(grabbedPrize.points);
                                     colItem.appendChild(pointsBadge);
                                     collectionBin.appendChild(colItem);
                                     
