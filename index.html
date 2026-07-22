@@ -135,6 +135,13 @@
         </label>
     </div>
 
+    <div class="top-card w-full max-w-[320px] mb-2 grid grid-cols-3 gap-2 p-2 rounded-2xl text-center">
+        <div><span class="block text-[10px] text-gray-400">剩餘時間</span><strong id="time-display" class="text-lg text-cyan-300">60</strong></div>
+        <div><span class="block text-[10px] text-gray-400">目前分數</span><strong id="score-display" class="text-lg text-pink-300">0</strong></div>
+        <div><span class="block text-[10px] text-gray-400">最高分</span><strong id="best-display" class="text-lg text-yellow-300">0</strong></div>
+        <p class="col-span-3 text-[10px] text-gray-300">金色圖案 50 分・其他圖案 10 分・最高分獲勝</p>
+    </div>
+
     <div id="loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex flex-col items-center justify-center text-white">
         <div class="loader mb-4"></div>
         <p class="font-bold text-lg">AI 正在為圖片去背...</p>
@@ -179,6 +186,15 @@
         <button id="btn-drop" class="arcade-btn w-16 h-16 bg-red-500 hover:bg-red-400 rounded-full text-xl font-bold flex justify-center items-center select-none active:bg-red-600 text-white uppercase tracking-wider">GO!</button>
     </div>
 
+    <div id="game-over-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-[60] flex flex-col items-center justify-center text-white p-6">
+        <div class="top-card w-full max-w-xs p-6 rounded-3xl text-center">
+            <p class="text-sm text-pink-300 font-bold mb-2">時間到！</p>
+            <h2 class="text-3xl font-black mb-2">本局 <span id="final-score">0</span> 分</h2>
+            <p id="result-message" class="text-sm text-gray-300 mb-5">最高分獲勝</p>
+            <button id="btn-restart" class="upload-chip px-6 py-3 rounded-xl font-bold">再玩一局</button>
+        </div>
+    </div>
+
     <div class="collection-card w-full max-w-[320px] mt-2 p-3 rounded-2xl">
         <h2 class="text-xs text-gray-400 font-bold mb-1">戰利品（My Collection）</h2>
         <div id="collection-bin" class="flex flex-wrap gap-2 min-h-[44px]"></div>
@@ -194,6 +210,7 @@
         const GAME_H = 1000;
         const CHUTE_W = 250; 
         const CHUTE_X = 125; 
+        const ROUND_SECONDS = 60;
         const PRESET_IMAGES = [
             'assets/presets/preset-01.png',
             ...Array.from({ length: 19 }, (_, index) =>
@@ -211,6 +228,11 @@
         let grabbedPrize = null;
         let isMovingLeft = false;
         let isMovingRight = false;
+        let score = 0;
+        let timeLeft = ROUND_SECONDS;
+        let gameActive = false;
+        let timerId = null;
+        let bestScore = Number(localStorage.getItem('vinegar-claw-best') || 0);
         const objectUrls = new Set();
         
         const clawAssembly = document.getElementById('claw-assembly');
@@ -221,6 +243,14 @@
         const presetBin = document.getElementById('preset-bin');
         const gameArea = document.getElementById('game-area');
         const loadingOverlay = document.getElementById('loading-overlay');
+        const timeDisplay = document.getElementById('time-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const bestDisplay = document.getElementById('best-display');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        const finalScore = document.getElementById('final-score');
+        const resultMessage = document.getElementById('result-message');
+        const btnRestart = document.getElementById('btn-restart');
+        bestDisplay.textContent = bestScore;
 
         function addPrize(imgSrc) {
             const id = 'prize_' + Math.random().toString(36).substring(2, 9);
@@ -243,6 +273,7 @@
             prizes.push({
                 id, el, x, y, size,
                 content: imgSrc,
+                points: imgSrc.includes('preset-18.') ? 50 : 10,
                 isGrabbed: false,
                 isCollected: false,
                 rotation: Math.random() * 360,
@@ -267,8 +298,70 @@
                 button.addEventListener('click', () => addPrize(src));
                 presetBin.appendChild(button);
 
+            });
+        }
+
+        function spawnPresetPrizes() {
+            PRESET_IMAGES.forEach((src, index) => {
                 setTimeout(() => addPrize(src), index * 120);
             });
+        }
+
+        function updateScoreboard() {
+            timeDisplay.textContent = timeLeft;
+            scoreDisplay.textContent = score;
+            bestDisplay.textContent = bestScore;
+        }
+
+        function beginTimer() {
+            gameActive = true;
+            timerId = setInterval(() => {
+                timeLeft -= 1;
+                updateScoreboard();
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(timerId);
+            timerId = null;
+            gameActive = false;
+            isMovingLeft = false;
+            isMovingRight = false;
+            claw.state = 'IDLE';
+            if (grabbedPrize) {
+                grabbedPrize.isGrabbed = false;
+                grabbedPrize = null;
+            }
+
+            const isNewBest = score > bestScore;
+            if (isNewBest) {
+                bestScore = score;
+                localStorage.setItem('vinegar-claw-best', String(bestScore));
+            }
+            updateScoreboard();
+            finalScore.textContent = score;
+            resultMessage.textContent = isNewBest ? '新紀錄！目前最高分' : `最高分是 ${bestScore} 分`;
+            gameOverOverlay.classList.remove('hidden');
+        }
+
+        function resetRound() {
+            clearInterval(timerId);
+            timerId = null;
+            gameActive = false;
+            score = 0;
+            timeLeft = ROUND_SECONDS;
+            claw = { x: 600, y: 100, state: 'IDLE', speedX: 8, speedY: 12 };
+            grabbedPrize = null;
+            isMovingLeft = false;
+            isMovingRight = false;
+            prizes.forEach(prize => prize.el.remove());
+            prizes = [];
+            collectionBin.replaceChildren();
+            gameOverOverlay.classList.add('hidden');
+            updateScoreboard();
+            spawnPresetPrizes();
+            setTimeout(beginTimer, PRESET_IMAGES.length * 120 + 300);
         }
 
         document.getElementById('image-upload').addEventListener('change', async function(e) {
@@ -309,7 +402,7 @@
 
         // 長按按鈕，統一使用 Pointer Events 支援滑鼠與觸控
         const bindHoldEvent = (btn, dir) => {
-            const start = (e) => { e.preventDefault(); if(claw.state === 'IDLE') dir === 'left' ? isMovingLeft = true : isMovingRight = true; };
+            const start = (e) => { e.preventDefault(); if(gameActive && claw.state === 'IDLE') dir === 'left' ? isMovingLeft = true : isMovingRight = true; };
             const stop = (e) => { e.preventDefault(); isMovingLeft = false; isMovingRight = false; };
             btn.addEventListener('pointerdown', start);
             btn.addEventListener('pointerup', stop);
@@ -321,7 +414,7 @@
         bindHoldEvent(btnRight, 'right');
 
         btnDrop.addEventListener('click', () => {
-            if (claw.state === 'IDLE') {
+            if (gameActive && claw.state === 'IDLE') {
                 claw.state = 'DROPPING';
                 isMovingLeft = false;
                 isMovingRight = false;
@@ -482,11 +575,17 @@
                                     grabbedPrize.isGrabbed = false;
                                     grabbedPrize.isCollected = true;
                                     grabbedPrize.el.style.display = 'none'; 
+                                    score += grabbedPrize.points;
+                                    updateScoreboard();
                                     
                                     const colItem = document.createElement('div');
                                     colItem.className = 'w-10 h-10 rounded-full flex items-center justify-center border border-gray-400 relative overflow-hidden';
                                     colItem.style.background = 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(200,230,255,0.8) 50%, rgba(100,180,255,0.9) 100%)';
                                     colItem.innerHTML = `<img src="${grabbedPrize.content}" class="w-4/5 h-4/5 object-contain">`;
+                                    const pointsBadge = document.createElement('span');
+                                    pointsBadge.className = 'absolute bottom-0 right-0 bg-black/70 text-[8px] font-bold text-yellow-300 px-1 rounded';
+                                    pointsBadge.textContent = `+${grabbedPrize.points}`;
+                                    colItem.appendChild(pointsBadge);
                                     collectionBin.appendChild(colItem);
                                     
                                     grabbedPrize = null;
@@ -516,7 +615,9 @@
             requestAnimationFrame(gameLoop);
         }
 
+        btnRestart.addEventListener('click', resetRound);
         initializePresets();
+        resetRound();
         requestAnimationFrame(gameLoop);
 
     </script>
