@@ -15,6 +15,43 @@
                 linear-gradient(145deg, #090b1a 0%, #17112f 48%, #090b1a 100%);
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .machine-shell {
+            width: min(320px, calc(100vw - 16px));
+            height: clamp(170px, 36dvh, 290px);
+            aspect-ratio: auto !important;
+            flex: 0 0 auto;
+        }
+
+        .bottom-panels {
+            width: min(320px, calc(100vw - 16px));
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 6px;
+        }
+
+        .compact-panel {
+            height: 66px;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        #collection-bin {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+
+        @media (max-height: 600px) {
+            .machine-shell { height: clamp(150px, 31dvh, 190px); }
+            .compact-panel { height: 58px; }
+            .preset-button { width: 34px; height: 34px; }
+        }
+
         .top-card, .collection-card {
             background: rgba(17, 24, 39, 0.72);
             border: 1px solid rgba(255, 255, 255, 0.13);
@@ -54,8 +91,8 @@
 
         .preset-button {
             flex: 0 0 auto;
-            width: 42px;
-            height: 42px;
+            width: 34px;
+            height: 34px;
             overflow: hidden;
             border-radius: 9999px;
             border: 2px solid rgba(255, 255, 255, 0.55);
@@ -185,17 +222,17 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-900 min-h-screen flex flex-col items-center justify-start px-2 py-3 font-sans text-white">
+<body class="bg-gray-900 h-[100dvh] flex flex-col items-center justify-start px-2 py-1.5 font-sans text-white">
 
-    <div class="top-card w-full max-w-[320px] mb-2 flex justify-between items-center p-3 rounded-2xl">
-        <h1 class="text-lg font-bold text-pink-400">✨ 醋坛子娃娃机</h1>
-        <label class="upload-chip cursor-pointer hover:brightness-110 text-white px-3 py-2 rounded-xl text-xs font-bold transition relative">
+    <div class="top-card w-full max-w-[320px] mb-1.5 flex justify-between items-center px-3 py-2 rounded-2xl">
+        <h1 class="text-base font-bold text-pink-400">✨ 醋坛子娃娃机</h1>
+        <label class="upload-chip cursor-pointer hover:brightness-110 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition relative">
             ➕ 上傳並去背
             <input type="file" id="image-upload" accept="image/*" multiple class="hidden">
         </label>
     </div>
 
-    <div class="top-card w-full max-w-[320px] mb-2 grid grid-cols-3 gap-2 p-2 rounded-2xl text-center">
+    <div class="top-card w-full max-w-[320px] mb-1.5 grid grid-cols-3 gap-x-2 gap-y-0 p-1.5 rounded-2xl text-center">
         <div><span class="block text-[10px] text-gray-400">剩餘時間</span><strong id="time-display" class="text-lg text-cyan-300">60</strong></div>
         <div><span class="block text-[10px] text-gray-400">目前分數</span><strong id="score-display" class="text-lg text-pink-300">0</strong></div>
         <div><span class="block text-[10px] text-gray-400">最高分</span><strong id="best-display" class="text-lg text-yellow-300">0</strong></div>
@@ -208,7 +245,7 @@
         <p class="text-sm text-gray-300 mt-2">首次執行會下載 AI 模型，請稍候幾秒鐘</p>
     </div>
 
-    <div class="machine-shell relative w-full max-w-[320px] aspect-[4/5] rounded-t-[2rem] border-[6px] overflow-hidden flex flex-col">
+    <div class="machine-shell relative rounded-t-[2rem] border-[6px] overflow-hidden flex flex-col">
         <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTAgMGgyMHYyMEgwem0xMCAxMGgxMHYxMEgxMHoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIvPjwvc3ZnPg==')] opacity-50"></div>
         <div class="machine-top absolute top-0 w-full h-10 z-20 flex justify-center items-center">
             <div class="flex space-x-4">
@@ -238,31 +275,33 @@
         <div class="glass-glare absolute inset-0 z-40 rounded-t-2xl"></div>
     </div>
 
-    <div class="control-deck w-full max-w-[320px] p-3 rounded-b-[2rem] border-x-[6px] border-b-[6px] flex justify-between items-center z-50">
+    <div class="control-deck w-full max-w-[320px] p-2 rounded-b-[2rem] border-x-[6px] border-b-[6px] flex justify-between items-center z-50">
         <div class="flex space-x-2">
-            <button id="btn-left" aria-label="向左移動" class="arcade-btn-blue w-14 h-14 bg-blue-500 hover:bg-blue-400 rounded-full text-2xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">◀</button>
-            <button id="btn-right" aria-label="向右移動" class="arcade-btn-blue w-14 h-14 bg-blue-500 hover:bg-blue-400 rounded-full text-2xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">▶</button>
+            <button id="btn-left" aria-label="向左移動" class="arcade-btn-blue w-12 h-12 bg-blue-500 hover:bg-blue-400 rounded-full text-xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">◀</button>
+            <button id="btn-right" aria-label="向右移動" class="arcade-btn-blue w-12 h-12 bg-blue-500 hover:bg-blue-400 rounded-full text-xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">▶</button>
         </div>
-        <button id="btn-drop" class="arcade-btn w-16 h-16 bg-red-500 hover:bg-red-400 rounded-full text-xl font-bold flex justify-center items-center select-none active:bg-red-600 text-white uppercase tracking-wider">GO!</button>
+        <button id="btn-drop" class="arcade-btn w-14 h-14 bg-red-500 hover:bg-red-400 rounded-full text-lg font-bold flex justify-center items-center select-none active:bg-red-600 text-white uppercase tracking-wider">GO!</button>
     </div>
 
     <div id="game-over-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-[60] flex flex-col items-center justify-center text-white p-6">
         <div class="top-card w-full max-w-xs p-6 rounded-3xl text-center">
             <p class="text-sm text-pink-300 font-bold mb-2">時間到！</p>
-            <h2 class="text-3xl font-black mb-2">本局 <span id="final-score">0</span> 分</h2>
+            <h2 class="text-3xl font-black mb-2">總分 <span id="final-score">0</span> 分</h2>
             <p id="result-message" class="text-sm text-gray-300 mb-5">最高分獲勝</p>
             <button id="btn-restart" class="upload-chip px-6 py-3 rounded-xl font-bold">再玩一局</button>
         </div>
     </div>
 
-    <div class="collection-card w-full max-w-[320px] mt-2 p-3 rounded-2xl">
-        <h2 class="text-xs text-gray-400 font-bold mb-1">戰利品（My Collection）</h2>
-        <div id="collection-bin" class="flex flex-wrap gap-2 min-h-[44px]"></div>
-    </div>
+    <div class="bottom-panels mt-1.5">
+        <div class="collection-card compact-panel p-2 rounded-2xl">
+            <h2 class="text-[10px] text-gray-400 font-bold mb-1">戰利品</h2>
+            <div id="collection-bin" class="flex gap-1 min-h-[40px]"></div>
+        </div>
 
-    <div class="collection-card w-full max-w-[320px] mt-2 p-3 rounded-2xl">
-        <h2 class="text-xs text-gray-400 font-bold mb-2">預設圖案（點擊加入）</h2>
-        <div id="preset-bin" class="preset-strip flex gap-2 overflow-x-auto pb-1"></div>
+        <div class="collection-card compact-panel p-2 rounded-2xl">
+            <h2 class="text-[10px] text-gray-400 font-bold mb-1">預設圖案（點擊加入）</h2>
+            <div id="preset-bin" class="preset-strip flex gap-1.5 overflow-x-auto pb-1"></div>
+        </div>
     </div>
 
     <script>
@@ -652,7 +691,7 @@
                                     updateScoreboard();
                                     
                                     const colItem = document.createElement('div');
-                                    colItem.className = 'w-10 h-10 rounded-full flex items-center justify-center border border-gray-400 relative overflow-hidden';
+                                    colItem.className = 'w-8 h-8 shrink-0 rounded-full flex items-center justify-center border border-gray-400 relative overflow-hidden';
                                     colItem.style.background = 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(200,230,255,0.8) 50%, rgba(100,180,255,0.9) 100%)';
                                     colItem.innerHTML = `<img src="${grabbedPrize.content}" class="w-4/5 h-4/5 object-contain">`;
                                     const pointsBadge = document.createElement('span');
