@@ -429,14 +429,16 @@
         const btnCloseSettings = document.getElementById('btn-close-settings');
         bestDisplay.textContent = bestScore;
 
-        function addPrize(imgSrc) {
+        function addPrize(imgSrc, initialPosition = null) {
             const id = 'prize_' + Math.random().toString(36).substring(2, 9);
             const size = 100;
             
             const minX = CHUTE_W + size;
             const maxX = GAME_W - size;
-            const x = minX + Math.random() * (maxX - minX);
-            const y = -size;
+            const x = initialPosition
+                ? initialPosition.x
+                : minX + Math.random() * (maxX - minX);
+            const y = initialPosition ? initialPosition.y : -size;
             
             const el = document.createElement('div');
             el.className = 'prize-item'; 
@@ -480,7 +482,19 @@
 
         function spawnPresetPrizes() {
             PRESET_IMAGES.forEach((src, index) => {
-                setTimeout(() => addPrize(src), index * 120);
+                const column = index % 5;
+                const row = Math.floor(index / 5);
+                const position = {
+                    x: 100 + column * 200,
+                    y: 440 + row * 130
+                };
+
+                if (index === 17) {
+                    position.x = 500;
+                    position.y = 930;
+                }
+
+                addPrize(src, position);
             });
         }
 
@@ -542,7 +556,7 @@
             settingsOverlay.classList.add('hidden');
             updateScoreboard();
             spawnPresetPrizes();
-            setTimeout(beginTimer, PRESET_IMAGES.length * 120 + 300);
+            setTimeout(beginTimer, 600);
         }
 
         document.getElementById('image-upload').addEventListener('change', async function(e) {
