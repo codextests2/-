@@ -80,11 +80,71 @@
             pointer-events: none;
         }
 
-        #prong-left, #prong-right { transition: transform 0.3s ease; }
-        .claw-open #prong-left { transform: rotate(35deg); }
-        .claw-open #prong-right { transform: rotate(-35deg); }
-        .claw-closed #prong-left { transform: rotate(5deg); }
-        .claw-closed #prong-right { transform: rotate(-5deg); }
+        #rope {
+            width: 5px;
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #64748b, #f8fafc 48%, #475569);
+            box-shadow: 0 0 8px rgba(125, 211, 252, 0.65);
+        }
+
+        #claw-head {
+            filter: drop-shadow(0 6px 5px rgba(15, 23, 42, 0.42));
+        }
+
+        .claw-cap {
+            position: relative;
+            width: 38px;
+            height: 24px;
+            z-index: 10;
+            border: 2px solid #7c2d12;
+            border-radius: 14px 14px 8px 8px;
+            background: linear-gradient(145deg, #fef3c7 5%, #fbbf24 45%, #f97316 100%);
+            box-shadow: inset 0 3px 3px rgba(255,255,255,0.7), 0 0 12px rgba(251,191,36,0.7);
+        }
+
+        .claw-cap::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -8px;
+            width: 15px;
+            height: 15px;
+            border: 2px solid #334155;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #fff, #67e8f9 32%, #2563eb 75%);
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(34,211,238,0.9);
+        }
+
+        #prong-left, #prong-right {
+            width: 8px;
+            height: 44px;
+            top: 19px;
+            border: 1px solid #334155;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #475569, #e2e8f0 48%, #64748b);
+            transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
+            box-shadow: inset 1px 0 2px rgba(255,255,255,0.7), 0 3px 5px rgba(15,23,42,0.35);
+        }
+
+        #prong-left { left: 7px; }
+        #prong-right { right: 7px; }
+        #prong-left::after, #prong-right::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            width: 15px;
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(#f8fafc, #64748b);
+        }
+        #prong-left::after { left: -8px; transform: rotate(-20deg); }
+        #prong-right::after { right: -8px; transform: rotate(20deg); }
+        .claw-open #prong-left { transform: rotate(38deg); }
+        .claw-open #prong-right { transform: rotate(-38deg); }
+        .claw-closed #prong-left { transform: rotate(7deg); }
+        .claw-closed #prong-right { transform: rotate(-7deg); }
 
         .prize-item {
             position: absolute;
@@ -139,7 +199,7 @@
         <div><span class="block text-[10px] text-gray-400">剩餘時間</span><strong id="time-display" class="text-lg text-cyan-300">60</strong></div>
         <div><span class="block text-[10px] text-gray-400">目前分數</span><strong id="score-display" class="text-lg text-pink-300">0</strong></div>
         <div><span class="block text-[10px] text-gray-400">最高分</span><strong id="best-display" class="text-lg text-yellow-300">0</strong></div>
-        <p class="col-span-3 text-[10px] text-gray-300">金色圖案 50 分・其他圖案 10 分・最高分獲勝</p>
+        <p class="col-span-3 text-[10px] text-gray-300">金色 50 分且較滑・其他 10 分・對準中心更容易抓到</p>
     </div>
 
     <div id="loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex flex-col items-center justify-center text-white">
@@ -166,11 +226,11 @@
             <div id="prizes-container" class="absolute inset-0 z-10"></div>
 
             <div id="claw-assembly" class="absolute top-0 z-30" style="left: 60%; transform: translateX(-50%);">
-                <div id="rope" class="w-1.5 bg-gray-400 mx-auto border-l border-gray-300" style="height: 50px;"></div>
+                <div id="rope" class="mx-auto" style="height: 50px;"></div>
                 <div id="claw-head" class="relative claw-open w-16 h-12 flex flex-col items-center -mt-1">
-                    <div class="w-8 h-5 bg-yellow-400 rounded-t-lg border-2 border-yellow-600 z-10"></div>
-                    <div class="absolute top-4 left-1 w-2 h-10 bg-gray-400 origin-top border border-gray-500 rounded-full" id="prong-left"></div>
-                    <div class="absolute top-4 right-1 w-2 h-10 bg-gray-400 origin-top border border-gray-500 rounded-full" id="prong-right"></div>
+                    <div class="claw-cap"></div>
+                    <div class="absolute origin-top" id="prong-left"></div>
+                    <div class="absolute origin-top" id="prong-right"></div>
                 </div>
             </div>
         </div>
@@ -232,6 +292,7 @@
         let timeLeft = ROUND_SECONDS;
         let gameActive = false;
         let timerId = null;
+        let dropOriginX = claw.x;
         let bestScore = Number(localStorage.getItem('vinegar-claw-best') || 0);
         const objectUrls = new Set();
         
@@ -352,6 +413,7 @@
             score = 0;
             timeLeft = ROUND_SECONDS;
             claw = { x: 600, y: 100, state: 'IDLE', speedX: 8, speedY: 12 };
+            dropOriginX = claw.x;
             grabbedPrize = null;
             isMovingLeft = false;
             isMovingRight = false;
@@ -415,6 +477,7 @@
 
         btnDrop.addEventListener('click', () => {
             if (gameActive && claw.state === 'IDLE') {
+                dropOriginX = claw.x;
                 claw.state = 'DROPPING';
                 isMovingLeft = false;
                 isMovingRight = false;
@@ -517,7 +580,7 @@
                 const dx = Math.abs(p.x - claw.x);
                 const dy = p.y - claw.y; 
 
-                if (dx < p.size * 0.7 && dy > 0 && dy < p.size * 0.8) {
+                if (dx < p.size * 0.5 && dy > 0 && dy < p.size * 0.65) {
                     const dist = Math.sqrt(dx*dx + dy*dy);
                     if (dist < minDist) {
                         minDist = dist;
@@ -541,14 +604,24 @@
             switch (claw.state) {
                 case 'DROPPING':
                     claw.y += claw.speedY;
+                    claw.x = Math.max(
+                        CHUTE_W + 50,
+                        Math.min(GAME_W - 50, dropOriginX + Math.sin(performance.now() / 95) * 14)
+                    );
                     const hitPrize = checkClawCollision();
                     if (hitPrize || claw.y >= GAME_H - 100) {
                         claw.state = 'GRABBING';
                         if (hitPrize) {
-                            grabbedPrize = hitPrize;
-                            grabbedPrize.isGrabbed = true;
-                            grabbedPrize.vx = 0;
-                            grabbedPrize.vy = 0;
+                            const offset = Math.abs(hitPrize.x - claw.x);
+                            const alignment = Math.max(0, 1 - offset / (hitPrize.size * 0.5));
+                            const isGolden = hitPrize.points === 50;
+                            const grabChance = (isGolden ? 0.35 : 0.55) + alignment * (isGolden ? 0.35 : 0.4);
+                            if (Math.random() <= grabChance) {
+                                grabbedPrize = hitPrize;
+                                grabbedPrize.isGrabbed = true;
+                                grabbedPrize.vx = 0;
+                                grabbedPrize.vy = 0;
+                            }
                         }
                         setTimeout(() => {
                             if(claw.state === 'GRABBING') claw.state = 'RISING';
