@@ -150,6 +150,8 @@
 
         #claw-head {
             filter: drop-shadow(0 6px 5px rgba(15, 23, 42, 0.42));
+            transform: scale(0.78);
+            transform-origin: top center;
         }
 
         .claw-cap {
@@ -178,33 +180,45 @@
         }
 
         #prong-left, #prong-right {
-            width: 8px;
-            height: 44px;
-            top: 19px;
-            border: 1px solid #334155;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #475569, #e2e8f0 48%, #64748b);
+            width: 1.65rem;
+            height: 3rem;
+            top: 1.1rem;
+            background: transparent;
             transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
-            box-shadow: inset 1px 0 2px rgba(255,255,255,0.7), 0 3px 5px rgba(15,23,42,0.35);
+            filter: drop-shadow(0 0.18rem 0.12rem rgba(15,23,42,0.3));
         }
 
-        #prong-left { left: 7px; }
-        #prong-right { right: 7px; }
+        #prong-left {
+            left: 0.62rem;
+            border-left: 0.24rem solid #94a3b8;
+            border-bottom: 0.18rem solid #cbd5e1;
+            border-radius: 0 0 0 90%;
+        }
+        #prong-right {
+            right: 0.62rem;
+            border-right: 0.24rem solid #94a3b8;
+            border-bottom: 0.18rem solid #cbd5e1;
+            border-radius: 0 0 90% 0;
+        }
         #prong-left::after, #prong-right::after {
             content: '';
             position: absolute;
-            bottom: -3px;
-            width: 15px;
-            height: 8px;
-            border-radius: 999px;
+            bottom: -0.12rem;
+            width: 0.62rem;
+            height: 0.18rem;
+            border-radius: 999rem;
             background: linear-gradient(#f8fafc, #64748b);
         }
-        #prong-left::after { left: -8px; transform: rotate(-20deg); }
-        #prong-right::after { right: -8px; transform: rotate(20deg); }
-        .claw-open #prong-left { transform: rotate(38deg); }
-        .claw-open #prong-right { transform: rotate(-38deg); }
-        .claw-closed #prong-left { transform: rotate(7deg); }
-        .claw-closed #prong-right { transform: rotate(-7deg); }
+        #prong-left::after { left: -0.38rem; transform: rotate(-22deg); }
+        #prong-right::after { right: -0.38rem; transform: rotate(22deg); }
+        .claw-open #prong-left { transform: rotate(24deg); }
+        .claw-open #prong-right { transform: rotate(-24deg); }
+        .claw-closed #prong-left { transform: rotate(2deg); }
+        .claw-closed #prong-right { transform: rotate(-2deg); }
+
+        .scoreboard, .scoreboard * {
+            color: #000 !important;
+        }
 
         .prize-item {
             position: absolute;
@@ -247,7 +261,7 @@
 </head>
 <body class="bg-gray-900 h-[100dvh] flex flex-col items-center justify-start px-2 py-1.5 font-sans text-white">
 
-    <div class="top-card app-width mb-1.5 grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-x-2 gap-y-0 p-1.5 rounded-2xl text-center">
+    <div class="scoreboard top-card app-width mb-1.5 grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-x-2 gap-y-0 p-1.5 rounded-2xl text-center">
         <div><span class="block text-[10px] text-gray-400">剩餘時間</span><strong id="time-display" class="text-lg text-cyan-300">60</strong></div>
         <div><span class="block text-[10px] text-gray-400">目前分數</span><strong id="score-display" class="text-lg text-pink-300">0</strong></div>
         <div><span class="block text-[10px] text-gray-400">最高分</span><strong id="best-display" class="text-lg text-yellow-300">0</strong></div>
