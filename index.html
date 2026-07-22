@@ -313,7 +313,10 @@
         <div><span class="block text-[10px] text-gray-400">剩餘時間</span><strong id="time-display" class="text-lg text-cyan-300">60</strong></div>
         <div><span class="block text-[10px] text-gray-400">目前分數</span><strong id="score-display" class="text-lg text-pink-300">0</strong></div>
         <div><span class="block text-[10px] text-gray-400">最高分</span><strong id="best-display" class="text-lg text-yellow-300">0</strong></div>
-        <button id="btn-settings" type="button" aria-label="開啟設定" class="w-8 aspect-square rounded-full bg-white/60 text-lg text-[#285c4d] hover:bg-white/90 transition">⚙</button>
+        <div class="flex gap-1">
+            <button id="btn-music" type="button" aria-label="開關遊戲音樂" class="w-8 aspect-square rounded-full bg-white/60 text-base hover:bg-white/90 transition">🎵</button>
+            <button id="btn-settings" type="button" aria-label="開啟設定" class="w-8 aspect-square rounded-full bg-white/60 text-lg text-[#285c4d] hover:bg-white/90 transition">⚙</button>
+        </div>
         <p class="col-span-4 text-[10px] text-gray-300">金 50・圖案 10・白球 0・黑球 -10・對準中心更容易抓到</p>
     </div>
 
@@ -417,6 +420,10 @@
         let timerId = null;
         let dropOriginX = claw.x;
         let settingsOpen = false;
+        let musicEnabled = localStorage.getItem('vinegar-claw-music') !== 'off';
+        let audioContext = null;
+        let musicTimer = null;
+        let musicStep = 0;
         let bestScore = Number(localStorage.getItem('vinegar-claw-best') || 0);
         const objectUrls = new Set();
         
@@ -437,8 +444,61 @@
         const btnRestart = document.getElementById('btn-restart');
         const settingsOverlay = document.getElementById('settings-overlay');
         const btnSettings = document.getElementById('btn-settings');
+        const btnMusic = document.getElementById('btn-music');
         const btnCloseSettings = document.getElementById('btn-close-settings');
         bestDisplay.textContent = bestScore;
+        btnMusic.textContent = musicEnabled ? '🎵' : '🔇';
+
+        function playTone(frequency, duration = 0.16, type = 'sine', volume = 0.025, delay = 0) {
+            if (!audioContext || audioContext.state !== 'running') return;
+            const startAt = audioContext.currentTime + delay;
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, startAt);
+            gain.gain.setValueAtTime(0.0001, startAt);
+            gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start(startAt);
+            oscillator.stop(startAt + duration + 0.03);
+        }
+
+        function playMusicStep() {
+            const melody = [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880, 698.46, 523.25, 659.25, 783.99, 1046.5, 880, 783.99, 659.25, 587.33];
+            playTone(melody[musicStep], 0.17, 'triangle', 0.024);
+            if (musicStep % 4 === 0) {
+                const bass = musicStep < 8 ? 130.81 : 146.83;
+                playTone(bass, 0.32, 'sine', 0.035);
+            }
+            musicStep = (musicStep + 1) % melody.length;
+        }
+
+        async function startMusic() {
+            if (!musicEnabled) return;
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+            if (!audioContext) audioContext = new AudioContextClass();
+            if (audioContext.state === 'suspended') await audioContext.resume();
+            if (musicTimer) return;
+            playMusicStep();
+            musicTimer = setInterval(playMusicStep, 220);
+        }
+
+        function stopMusic() {
+            clearInterval(musicTimer);
+            musicTimer = null;
+            if (audioContext?.state === 'running') audioContext.suspend();
+        }
+
+        function toggleMusic() {
+            musicEnabled = !musicEnabled;
+            localStorage.setItem('vinegar-claw-music', musicEnabled ? 'on' : 'off');
+            btnMusic.textContent = musicEnabled ? '🎵' : '🔇';
+            if (musicEnabled) startMusic();
+            else stopMusic();
+        }
 
         function addPrize(imgSrc, initialPosition = null, options = {}) {
             const id = 'prize_' + Math.random().toString(36).substring(2, 9);
@@ -620,7 +680,7 @@
 
         // 長按按鈕，統一使用 Pointer Events 支援滑鼠與觸控
         const bindHoldEvent = (btn, dir) => {
-            const start = (e) => { e.preventDefault(); if(gameActive && claw.state === 'IDLE') dir === 'left' ? isMovingLeft = true : isMovingRight = true; };
+            const start = (e) => { e.preventDefault(); startMusic(); if(gameActive && claw.state === 'IDLE') dir === 'left' ? isMovingLeft = true : isMovingRight = true; };
             const stop = (e) => { e.preventDefault(); isMovingLeft = false; isMovingRight = false; };
             btn.addEventListener('pointerdown', start);
             btn.addEventListener('pointerup', stop);
@@ -632,6 +692,7 @@
         bindHoldEvent(btnRight, 'right');
 
         btnDrop.addEventListener('click', () => {
+            startMusic();
             if (gameActive && claw.state === 'IDLE') {
                 dropOriginX = claw.x;
                 claw.state = 'DROPPING';
@@ -865,6 +926,7 @@
         }
 
         btnSettings.addEventListener('click', () => setSettings(true));
+        btnMusic.addEventListener('click', toggleMusic);
         btnCloseSettings.addEventListener('click', () => setSettings(false));
         settingsOverlay.addEventListener('click', event => {
             if (event.target === settingsOverlay) setSettings(false);
@@ -872,7 +934,10 @@
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape' && settingsOpen) setSettings(false);
         });
-        btnRestart.addEventListener('click', resetRound);
+        btnRestart.addEventListener('click', () => {
+            startMusic();
+            resetRound();
+        });
         initializePresets();
         resetRound();
         requestAnimationFrame(gameLoop);
