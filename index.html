@@ -51,7 +51,9 @@
 
         .machine-shell {
             border-color: #a5dfca;
-            background: linear-gradient(160deg, #d9fff0 0%, #bfeeda 55%, #9ed7c3 100%);
+            background:
+                linear-gradient(115deg, rgba(255,255,255,0.38), transparent 28%),
+                linear-gradient(160deg, rgba(226,255,244,0.88), rgba(167,226,205,0.72));
             box-shadow:
                 inset 0 0 0 0.18rem rgba(255, 255, 255, 0.42),
                 0 1.5rem 3.5rem rgba(2, 28, 21, 0.35),
@@ -72,6 +74,13 @@
             box-shadow: 0 1.2rem 2.6rem rgba(1, 27, 20, 0.35);
         }
 
+        #game-area {
+            background:
+                linear-gradient(105deg, rgba(255,255,255,0.24), transparent 22%, rgba(255,255,255,0.12) 48%, transparent 64%),
+                rgba(214, 255, 239, 0.18);
+            backdrop-filter: blur(0.08rem);
+        }
+
         #game-area::before {
             content: '';
             position: absolute;
@@ -90,6 +99,34 @@
 
         #btn-drop {
             background: linear-gradient(#ff7b72, #e5423a);
+        }
+
+        .prize-chute {
+            width: clamp(3rem, 14vw, 4rem);
+            aspect-ratio: 4 / 5;
+            padding: 0.28rem;
+            border: 0.16rem solid #76af9c;
+            border-radius: 0.65rem;
+            background: linear-gradient(145deg, #b8e6d4, #78b6a1);
+            box-shadow: inset 0 0.25rem 0.45rem rgba(255,255,255,0.45), 0 0.35rem 0.7rem rgba(18,68,53,0.22);
+        }
+
+        .prize-chute-hole {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 0.38rem;
+            background: radial-gradient(circle at 50% 28%, #263f38, #07110e 70%);
+            box-shadow: inset 0 0.4rem 0.75rem #000, 0 0.08rem 0 rgba(255,255,255,0.35);
+        }
+
+        .prize-chute-label {
+            display: block;
+            margin-top: 0.12rem;
+            color: #214c3f;
+            font-size: 0.55rem;
+            font-weight: 700;
+            text-align: center;
         }
 
         .settings-panel {
@@ -299,10 +336,6 @@
         </div>
 
         <div id="game-area" class="relative flex-1 w-full h-full">
-            <div class="absolute bottom-0 left-0 w-[25%] h-[20%] bg-gray-800 border-r-4 border-t-4 border-gray-600 rounded-tr-xl flex items-center justify-center z-10">
-                <div class="w-3/4 h-3/4 bg-black rounded-lg shadow-inner"></div>
-            </div>
-            
             <div id="prizes-container" class="absolute inset-0 z-10"></div>
 
             <div id="claw-assembly" class="absolute top-0 z-30" style="left: 60%; transform: translateX(-50%);">
@@ -318,12 +351,16 @@
         <div class="glass-glare absolute inset-0 z-40 rounded-t-2xl"></div>
     </div>
 
-    <div class="control-deck app-width p-2 rounded-b-[2rem] border-x-[0.45rem] border-b-[0.45rem] flex justify-between items-center z-50">
+    <div class="control-deck app-width p-2 rounded-b-[2rem] border-x-[0.45rem] border-b-[0.45rem] grid grid-cols-[1fr_auto_auto] gap-2 items-center z-50">
         <div class="flex space-x-2">
             <button id="btn-left" aria-label="向左移動" class="arcade-btn-blue w-12 h-12 bg-blue-500 hover:bg-blue-400 rounded-full text-xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">◀</button>
             <button id="btn-right" aria-label="向右移動" class="arcade-btn-blue w-12 h-12 bg-blue-500 hover:bg-blue-400 rounded-full text-xl flex justify-center items-center select-none active:bg-blue-600 text-white font-black">▶</button>
         </div>
         <button id="btn-drop" class="arcade-btn w-14 h-14 bg-red-500 hover:bg-red-400 rounded-full text-lg font-bold flex justify-center items-center select-none active:bg-red-600 text-white uppercase tracking-wider">GO!</button>
+        <div class="prize-chute" aria-label="取物口">
+            <span class="prize-chute-hole"></span>
+            <span class="prize-chute-label">取物口</span>
+        </div>
     </div>
 
     <div id="game-over-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-[60] flex flex-col items-center justify-center text-white p-6">
@@ -343,8 +380,8 @@
     <script>
         const GAME_W = 1000;
         const GAME_H = 1000;
-        const CHUTE_W = 250; 
-        const CHUTE_X = 125; 
+        const CHUTE_W = 0;
+        const CHUTE_X = 875;
         const ROUND_SECONDS = 60;
         const PRESET_IMAGES = [
             'assets/presets/preset-01.png',
@@ -724,8 +761,8 @@
                     break;
 
                 case 'MOVING_CHUTE':
-                    claw.x -= claw.speedX;
-                    if (claw.x <= CHUTE_X) {
+                    claw.x += claw.speedX;
+                    if (claw.x >= CHUTE_X) {
                         claw.x = CHUTE_X;
                         claw.state = 'RELEASING';
                         setTimeout(() => {
@@ -756,8 +793,8 @@
                     break;
 
                 case 'RETURNING':
-                    claw.x += claw.speedX;
-                    if (claw.x >= 600) { 
+                    claw.x -= claw.speedX;
+                    if (claw.x <= 600) {
                         claw.x = 600;
                         claw.state = 'IDLE';
                     }
